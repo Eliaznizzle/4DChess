@@ -75,7 +75,7 @@ public class Board : MonoBehaviour {
                 ChessPiece piece = Index(hover);
                 if (piece.black == localPlayerBlack) {
                     piece.grab = true;
-                    piece.GetComponent<SpriteRenderer>().sortingOrder = 2;
+                    piece.rend.sortingOrder = 6;
                     SpawnIndicators(piece.GetMoves());
                 } else {
                     grab = new int[] { -1, -1, -1, -1 };
@@ -193,9 +193,9 @@ public class Board : MonoBehaviour {
         ChessPiece piece;
         int[] pos = new int[] { x, y, z, w };
         if (!black) {
-            piece = Instantiate(piecePrefabs[typeIndex], BoardToWorld(pos), Quaternion.identity).GetComponent<ChessPiece>();
+            piece = Instantiate(piecePrefabs[typeIndex]).GetComponent<ChessPiece>();
         } else {
-            piece = Instantiate(piecePrefabs[typeIndex + 6], BoardToWorld(pos), Quaternion.identity).GetComponent<ChessPiece>();
+            piece = Instantiate(piecePrefabs[typeIndex + 6]).GetComponent<ChessPiece>();
         }
         piece.board = this;
         pieces[x, y, z, w] = piece;

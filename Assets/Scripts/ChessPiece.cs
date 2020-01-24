@@ -12,12 +12,13 @@ public abstract class ChessPiece : MonoBehaviour
 
     public bool grab;
 
+    public SpriteRenderer rend;
+
     private bool fling = false; //If true, piece should be flinged then this should be set to false
 
     void Start() {
-        if (gameObject.name.Contains("Black")) {
-            black = true;
-        }
+        rend = GetComponent<SpriteRenderer>();
+        GoHome();
     }
 
     void Update() {
@@ -52,7 +53,7 @@ public abstract class ChessPiece : MonoBehaviour
     }
 
     public void GoHome() {
-        GetComponent<SpriteRenderer>().sortingOrder = 0;
+        rend.sortingOrder = 3 - position[3];
         transform.position = board.BoardToWorld(position);
     }
 

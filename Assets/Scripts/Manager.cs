@@ -40,6 +40,7 @@ public class Manager : MonoBehaviour {
 
     Task host;
     void Start() {
+        Thread.CurrentThread.CurrentUICulture = new CultureInfo("en-us");
         Initialize();
         if (singlePlayerTest) {
             StartGame(true);
@@ -47,7 +48,6 @@ public class Manager : MonoBehaviour {
     }
 
     void Initialize() {
-        Thread.CurrentThread.CurrentUICulture = new CultureInfo("en-us");
         DontDestroyOnLoad(gameObject);
 
         random = new System.Random();
