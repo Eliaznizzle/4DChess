@@ -17,12 +17,16 @@ public class Manager : MonoBehaviour {
     public InputField iPInput;
     public InputField portInput;
 
+    public Canvas canvas;
+    public RectTransform UIScaler;
+
     public GameObject gameUIPrefab;
     public GameObject gameUI;
-    public GameObject promotionButton;
 
     public GameObject gameEndMenuPrefab;
     public Text result;
+
+    public GameObject promotionMenuPrefab;
 
     public Text myIP;
     public Text error;
@@ -34,7 +38,7 @@ public class Manager : MonoBehaviour {
     Socket otherPlayer;
 
     public GameObject boardPrefab;
-    Board board;
+    public Board board;
 
     public bool singlePlayerTest = true; //REMOVE THIS. IN FINAL BUILD THIS IS TO ALWAYS BE CONSIDERED FALSE
 

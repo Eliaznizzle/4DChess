@@ -56,7 +56,7 @@ public class Board : MonoBehaviour {
         GenerateChessboard();
         SpawnPieces();
 
-                        //Index(new int[] { 3, 3, 3, 3 }).Die();
+        //Index(new int[] { 3, 3, 3, 3 }).Die();
 
         receive = Task.Run(() => {
             while (true) {
@@ -88,18 +88,30 @@ public class Board : MonoBehaviour {
                 ChessPiece piece = Index(grab);
                 piece.grab = false;
                 if (Stuff.WithinBounds(hover)) {
+                    playerTurn = false;
                     if (piece.Move(hover) && !manager.singlePlayerTest) {
-                        playerTurn = false;
-                        manager.PassTurn(grab, hover);
+                        piece.GoHome();
+                        if (piece.GetType() == typeof(Pawn) && piece.position[1] == 3 && piece.position[3] == 3) {
+                            //Promote
+                        } else {
+                            manager.PassTurn(grab, hover);
+                        }
+                    } else {
+                        piece.GoHome();
+                        if (piece.GetType() == typeof(Pawn) && piece.position[1] == 3 && piece.position[3] == 3) {
+                            Debug.Log("Promotion time");
+                            Promotion promotion = Instantiate(manager.promotionMenuPrefab, manager.UIScaler).GetComponent<Promotion>();
+                            promotion.manager = manager;
+                            promotion.piece = piece;
+                        } else {
+                            playerTurn = true;
+                        }
                     }
-                }
+                } else { piece.GoHome(); }
                 grab = new int[] { -1, -1, -1, -1 };
-                piece.GoHome();
                 DestroyIndicators();
             }
         }
-
-
     }
 
     private void UpdateHover() {

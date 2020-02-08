@@ -2,13 +2,18 @@
 using System.Collections.Generic;
 using UnityEngine;
 using Chess;
-public abstract class ChessPiece : MonoBehaviour
-{
+public abstract class ChessPiece : MonoBehaviour {
     public Board board;
 
     public bool hasMoved = false;
     public int[] position = new int[] { -1, -1, -1, -1 };
+
     public bool black;
+    public int BlackConstant {
+        get {
+            if (black) { return -1; } else return 1;
+        }
+    }
 
     public bool grab;
 
@@ -48,8 +53,7 @@ public abstract class ChessPiece : MonoBehaviour
             board.pieces[target[0], target[1], target[2], target[3]] = this;
             hasMoved = true;
             return true;
-        }
-        else { return false; }
+        } else { return false; }
     }
 
     public void GoHome() {
@@ -67,6 +71,7 @@ public abstract class ChessPiece : MonoBehaviour
                 }
             }
         }
+        Debug.Log("Returning false");
         return false;
     }
     public int[] CalcMove(int[] move) {
@@ -79,7 +84,7 @@ public abstract class ChessPiece : MonoBehaviour
 
     public virtual void Die() {
         position = new int[] { -1, -1, -1, -1 };
-        GetComponent<SpriteRenderer>().sortingOrder = 2;
+        rend.sortingOrder = 2;
         gameObject.AddComponent(typeof(Rigidbody2D));
         gameObject.AddComponent(typeof(PolygonCollider2D));
         fling = true;
