@@ -9,9 +9,9 @@ public abstract class ChessPiece : MonoBehaviour {
     public int[] position = new int[] { -1, -1, -1, -1 };
 
     public bool black;
-    public int BlackConstant {
+    public int FinalRank {
         get {
-            if (black) { return -1; } else return 1;
+            if (black) { return 0; } else return 3;
         }
     }
 
@@ -71,7 +71,6 @@ public abstract class ChessPiece : MonoBehaviour {
                 }
             }
         }
-        Debug.Log("Returning false");
         return false;
     }
     public int[] CalcMove(int[] move) {

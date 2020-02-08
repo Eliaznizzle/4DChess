@@ -98,7 +98,7 @@ public class Board : MonoBehaviour {
                         }
                     } else {
                         piece.GoHome();
-                        if (piece.GetType() == typeof(Pawn) && piece.position[1] == 3 && piece.position[3] == 3) {
+                        if (piece.GetType() == typeof(Pawn) && piece.position[1] == piece.FinalRank && piece.position[3] == piece.FinalRank) {
                             Debug.Log("Promotion time");
                             Promotion promotion = Instantiate(manager.promotionMenuPrefab, manager.UIScaler).GetComponent<Promotion>();
                             promotion.manager = manager;
@@ -204,6 +204,12 @@ public class Board : MonoBehaviour {
     public ChessPiece SpawnPiece(int x, int y, int z, int w, int typeIndex, bool black) {
         ChessPiece piece;
         int[] pos = new int[] { x, y, z, w };
+
+        piece = Index(pos);
+        if (piece != null) {
+            Destroy(piece.gameObject);
+        }
+
         if (!black) {
             piece = Instantiate(piecePrefabs[typeIndex]).GetComponent<ChessPiece>();
         } else {

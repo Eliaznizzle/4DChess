@@ -3,8 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using Chess;
 
-public class Bishop : ChessPiece
-{
+public class Bishop : ChessPiece {
     public override int[][] GetMoves() {
         List<int[]> moves = new List<int[]>();
 
@@ -18,8 +17,15 @@ public class Bishop : ChessPiece
                                 move[d] += i;
                                 move[d2] += i2;
                                 int[] move2 = CalcMove(move);
-                                if (Stuff.WithinBounds(move2) && (board.Index(move2) == null || board.Index(move2).black != black)) {
-                                    moves.Add(move2);
+                                if (Stuff.WithinBounds(move2)) {
+                                    if ((board.Index(move2) == null)) {
+                                        moves.Add(move2);
+                                    } else if (board.Index(move2).black != black) {
+                                        moves.Add(move2);
+                                        break;
+                                    } else {
+                                        break;
+                                    }
                                 } else {
                                     break;
                                 }

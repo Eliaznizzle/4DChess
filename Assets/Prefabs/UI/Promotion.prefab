@@ -53,6 +53,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   manager: {fileID: 0}
   piece: {fileID: 0}
+  promotions: 
 --- !u!1 &224918188349723842
 GameObject:
   m_ObjectHideFlags: 0
@@ -171,7 +172,18 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 224918188349723846}
   m_OnClick:
     m_PersistentCalls:
-      m_Calls: []
+      m_Calls:
+      - m_Target: {fileID: 224918188243816055}
+        m_MethodName: ChangeLeft
+        m_Mode: 1
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
 --- !u!95 &224918188349723840
 Animator:
   serializedVersion: 3
@@ -309,7 +321,18 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 224918188441750120}
   m_OnClick:
     m_PersistentCalls:
-      m_Calls: []
+      m_Calls:
+      - m_Target: {fileID: 224918188243816055}
+        m_MethodName: Confirm
+        m_Mode: 1
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
 --- !u!95 &224918188441750122
 Animator:
   serializedVersion: 3
@@ -446,7 +469,18 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 224918189531236822}
   m_OnClick:
     m_PersistentCalls:
-      m_Calls: []
+      m_Calls:
+      - m_Target: {fileID: 224918188243816055}
+        m_MethodName: ChangeRight
+        m_Mode: 1
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
 --- !u!95 &224918189531236820
 Animator:
   serializedVersion: 3
