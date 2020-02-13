@@ -17,8 +17,8 @@ public class Manager : MonoBehaviour {
     public InputField iPInput;
     public InputField portInput;
 
-    public Canvas canvas;
-    public RectTransform UIScaler;
+    public RectTransform ScreenUIScaler;
+    public RectTransform WorldUIScaler;
 
     public GameObject gameUIPrefab;
     public GameObject gameUI;
@@ -27,6 +27,9 @@ public class Manager : MonoBehaviour {
     public Text result;
 
     public GameObject promotionMenuPrefab;
+
+    public GameObject DebugTextPrefab;
+    List<GameObject> DebugLines = new List<GameObject>();
 
     public Text myIP;
     public Text error;
@@ -40,7 +43,11 @@ public class Manager : MonoBehaviour {
     public GameObject boardPrefab;
     public Board board;
 
-    public bool singlePlayerTest = true; //REMOVE THIS. IN FINAL BUILD THIS IS TO ALWAYS BE CONSIDERED FALSE
+    List<(byte[], int)> netData = new List<(byte[], int)>();
+
+    Task receive;
+
+    public bool singlePlayerTest; //REMOVE THIS. IN FINAL BUILD THIS IS TO ALWAYS BE CONSIDERED FALSE
 
     Task host;
     void Start() {
@@ -110,6 +117,48 @@ public class Manager : MonoBehaviour {
         if (Input.GetButtonDown("Cancel")) {
             Application.Quit();
         }
+        if (netData.Count > 0) {
+            Print("We got data boys");
+            string dataString = Encoding.ASCII.GetString(netData[0].Item1, 0, netData[0].Item2);
+            Print(dataString);
+            if (dataString.Length == 8) {
+                Print("Data length is 8 - opponent made move.");
+                int[] piecePos = new int[4];
+                int[] move = new int[4];
+                for (int i = 0; i < 4; i++) {
+                    piecePos[i] = (int)Char.GetNumericValue(dataString[i]);
+                }
+                for (int i = 0; i < 4; i++) {
+                    move[i] = (int)Char.GetNumericValue(dataString[i + 4]);
+                }
+                Print("Got here");
+                board.Index(piecePos).Move(move);
+                Print("Got here?");
+                board.playerTurn = true;
+                board.Index(move).GoHome();
+            } else if (dataString.Length == 9) {
+                Print("Data length is 9 - opponent made move and promoted a piece.");
+                int[] piecePos = new int[4];
+                int[] move = new int[4];
+                for (int i = 0; i < 4; i++) {
+                    piecePos[i] = (int)Char.GetNumericValue(dataString[i]);
+                }
+                for (int i = 0; i < 4; i++) {
+                    move[i] = (int)Char.GetNumericValue(dataString[i + 4]);
+                }
+                ChessPiece piece = board.Index(piecePos);
+                piece.Move(move);
+                Print("Got here");
+                board.SpawnPiece(move[0], move[1], move[2], move[3], (int)Char.GetNumericValue(dataString[8]), piece.black);
+                board.playerTurn = true;
+                Print("Got here too");
+                board.Index(move).GoHome();
+                Print("How about here?");
+            } else {
+                Print("wtf? data length is " + dataString.Length);
+            }
+            netData.RemoveAt(0);
+        }
     }
 
     public void Connect() {
@@ -156,6 +205,11 @@ public class Manager : MonoBehaviour {
             }
         } else { board.localPlayerBlack = false; }
         board.manager = this;
+        receive = Task.Run(() => {
+            while (this) {
+                netData.Add(ReceiveData());
+            }
+        });
         board.gameStarted = true;
     }
 
@@ -167,6 +221,12 @@ public class Manager : MonoBehaviour {
     public void PassTurn(int[] piece, int[] move) {
         byte[] data = Encoding.ASCII.GetBytes($"{piece[0]}{piece[1]}{piece[2]}{piece[3]}{move[0]}{move[1]}{move[2]}{move[3]}");
         Debug.Log($"Sending move {piece[0]}{piece[1]}{piece[2]}{piece[3]} to {move[0]}{move[1]}{move[2]}{move[3]}");
+        otherPlayer.Send(data);
+    }
+
+    public void PassTurnPromotion(int[] piece, int[] move, int index) {
+        byte[] data = Encoding.ASCII.GetBytes($"{piece[0]}{piece[1]}{piece[2]}{piece[3]}{move[0]}{move[1]}{move[2]}{move[3]}{index}");
+        Debug.Log($"Sending move {piece[0]}{piece[1]}{piece[2]}{piece[3]} to {move[0]}{move[1]}{move[2]}{move[3]} with promotion to {index}");
         otherPlayer.Send(data);
     }
 
@@ -182,28 +242,22 @@ public class Manager : MonoBehaviour {
         }
     }
 
-    public void ReceiveData() {
+    public (byte[], int) ReceiveData() {
         byte[] data = new byte[1024];
         int length = otherPlayer.Receive(data);
         Debug.Log("Received data");
-        if (length > 1) {
-            Console.WriteLine("Data longer than 0 - opponent made move.");
-            string dataString = Encoding.ASCII.GetString(data, 0, length);
-            for (int i = 0; i < 4; i++) {
-                Debug.Log(dataString);
-            }
-            int[] piece = new int[4];
-            int[] move = new int[4];
-            for (int i = 0; i < 4; i++) {
-                piece[i] = (int)Char.GetNumericValue(dataString[i]);
-            }
-            for (int i = 0; i < 4; i++) {
-                move[i] = (int)Char.GetNumericValue(dataString[i + 4]);
-            }
-            board.Index(piece).Move(move);
-            board.playerTurn = true;
-            board.Index(move).GoHome();
+        return (data, length);
+    }
+
+    public void Print(string text) {
+        Debug.Log(text);
+        foreach (GameObject line in DebugLines) {
+            line.GetComponent<RectTransform>().localPosition += new Vector3(0, -150, 0);
         }
+
+        GameObject newLine = Instantiate(DebugTextPrefab, ScreenUIScaler);
+        newLine.GetComponent<Text>().text = Time.time + ": " + text;
+        DebugLines.Add(newLine);
     }
 
 }

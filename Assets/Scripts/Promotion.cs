@@ -7,12 +7,18 @@ public class Promotion : MonoBehaviour {
     public ChessPiece piece;
     public int[] promotions;
 
+    public int[] originalPosition;
+
     int index = 0;
 
     private void Start() {
         GameObject[] pieces = Board.piecePrefabs;
 
-        GetComponent<RectTransform>().localPosition = (manager.board.BoardToWorld(piece.position) * (manager.canvas.pixelRect.height / Camera.main.orthographicSize) / 2) * 10;
+        /*GetComponent<RectTransform>().localPosition = new Vector2(
+            piece.transform.position.x * (manager.canvas.pixelRect.width / (Camera.main.orthographicSize * Camera.main.aspect * 2)),
+            piece.transform.position.y * (manager.canvas.pixelRect.height / (Camera.main.orthographicSize * 2))
+            ) * 10;*/
+        transform.position = piece.transform.position;
     }
 
     public void Change() {
@@ -32,6 +38,7 @@ public class Promotion : MonoBehaviour {
     public void Confirm() {
         if (!manager.singlePlayerTest) {
             //Pass turn with info about promotion
+            manager.PassTurnPromotion(originalPosition, piece.position, index+1);
         } else {
             manager.board.playerTurn = true;
         }

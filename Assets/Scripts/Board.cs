@@ -47,8 +47,6 @@ public class Board : MonoBehaviour {
 
     int up = 1;
 
-    Task receive;
-
     private void Start() {
         if (localPlayerBlack) { up = -1; playerTurn = false; } else { playerTurn = true; }
 
@@ -57,12 +55,6 @@ public class Board : MonoBehaviour {
         SpawnPieces();
 
         //Index(new int[] { 3, 3, 3, 3 }).Die();
-
-        receive = Task.Run(() => {
-            while (true) {
-                manager.ReceiveData();
-            }
-        });
     }
 
     private void Update() {
@@ -91,8 +83,11 @@ public class Board : MonoBehaviour {
                     playerTurn = false;
                     if (piece.Move(hover) && !manager.singlePlayerTest) {
                         piece.GoHome();
-                        if (piece.GetType() == typeof(Pawn) && piece.position[1] == 3 && piece.position[3] == 3) {
-                            //Promote
+                        if (piece.GetType() == typeof(Pawn) && piece.position[1] == piece.FinalRank && piece.position[3] == piece.FinalRank) {
+                            Promotion promotion = Instantiate(manager.promotionMenuPrefab, manager.WorldUIScaler).GetComponent<Promotion>();
+                            promotion.manager = manager;
+                            promotion.piece = piece;
+                            promotion.originalPosition = grab;
                         } else {
                             manager.PassTurn(grab, hover);
                         }
@@ -100,7 +95,7 @@ public class Board : MonoBehaviour {
                         piece.GoHome();
                         if (piece.GetType() == typeof(Pawn) && piece.position[1] == piece.FinalRank && piece.position[3] == piece.FinalRank) {
                             Debug.Log("Promotion time");
-                            Promotion promotion = Instantiate(manager.promotionMenuPrefab, manager.UIScaler).GetComponent<Promotion>();
+                            Promotion promotion = Instantiate(manager.promotionMenuPrefab, manager.WorldUIScaler).GetComponent<Promotion>();
                             promotion.manager = manager;
                             promotion.piece = piece;
                         } else {

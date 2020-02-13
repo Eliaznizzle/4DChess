@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using Chess;
+using System.Threading.Tasks;
 public abstract class ChessPiece : MonoBehaviour {
     public Board board;
 
@@ -57,8 +58,12 @@ public abstract class ChessPiece : MonoBehaviour {
     }
 
     public void GoHome() {
+        Debug.Log("Going home");
+        if (rend == null) { rend = GetComponent<SpriteRenderer>(); }
         rend.sortingOrder = 3 - position[3];
+        Debug.Log("sorting order set");
         transform.position = board.BoardToWorld(position);
+        board.manager.Print("position set");
     }
 
     public bool IsMoveValid(int[] move) {
