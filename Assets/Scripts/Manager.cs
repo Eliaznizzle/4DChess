@@ -17,8 +17,8 @@ public class Manager : MonoBehaviour {
     public InputField iPInput;
     public InputField portInput;
 
-    public RectTransform ScreenUIScaler;
-    public RectTransform WorldUIScaler;
+    public RectTransform screenCanvas;
+    public RectTransform worldCanvas;
 
     public GameObject gameUIPrefab;
     public GameObject gameUI;
@@ -63,7 +63,7 @@ public class Manager : MonoBehaviour {
 
         random = new System.Random();
 
-        mainMenu = Instantiate(mainMenuPrefab);
+        mainMenu = Instantiate(mainMenuPrefab, screenCanvas);
 
         foreach (InputField ui in mainMenu.GetComponentsInChildren<InputField>()) {
             switch (ui.gameObject.name) {
@@ -255,7 +255,7 @@ public class Manager : MonoBehaviour {
             line.GetComponent<RectTransform>().localPosition += new Vector3(0, -150, 0);
         }
 
-        GameObject newLine = Instantiate(DebugTextPrefab, ScreenUIScaler);
+        GameObject newLine = Instantiate(DebugTextPrefab, screenCanvas);
         newLine.GetComponent<Text>().text = Time.time + ": " + text;
         DebugLines.Add(newLine);
     }

@@ -84,7 +84,7 @@ public class Board : MonoBehaviour {
                     if (piece.Move(hover) && !manager.singlePlayerTest) {
                         piece.GoHome();
                         if (piece.GetType() == typeof(Pawn) && piece.position[1] == piece.FinalRank && piece.position[3] == piece.FinalRank) {
-                            Promotion promotion = Instantiate(manager.promotionMenuPrefab, manager.WorldUIScaler).GetComponent<Promotion>();
+                            Promotion promotion = Instantiate(manager.promotionMenuPrefab, manager.worldCanvas).GetComponent<Promotion>();
                             promotion.manager = manager;
                             promotion.piece = piece;
                             promotion.originalPosition = grab;
@@ -95,7 +95,7 @@ public class Board : MonoBehaviour {
                         piece.GoHome();
                         if (piece.GetType() == typeof(Pawn) && piece.position[1] == piece.FinalRank && piece.position[3] == piece.FinalRank) {
                             Debug.Log("Promotion time");
-                            Promotion promotion = Instantiate(manager.promotionMenuPrefab, manager.WorldUIScaler).GetComponent<Promotion>();
+                            Promotion promotion = Instantiate(manager.promotionMenuPrefab, manager.worldCanvas).GetComponent<Promotion>();
                             promotion.manager = manager;
                             promotion.piece = piece;
                         } else {
