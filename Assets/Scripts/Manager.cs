@@ -170,15 +170,10 @@ public class Manager : MonoBehaviour {
             iP = IPAddress.Parse(iPInput.textComponent.text);
             targetPort = int.Parse(portInput.text);
         } catch (Exception e) { error.text = e.Message; return; }
-        for (int i = 0; i < 1; i++) {
-            try {
-                otherPlayer = new Socket(SocketType.Stream, ProtocolType.Tcp);
-                otherPlayer.Connect(new IPEndPoint(iP, targetPort));
-                if (otherPlayer.Connected) {
-                    break;
-                }
-            } catch (Exception e) { error.text = e.Message; }
-        }
+        try {
+            otherPlayer = new Socket(SocketType.Stream, ProtocolType.Tcp);
+            otherPlayer.Connect(new IPEndPoint(iP, targetPort));
+        } catch (Exception e) { error.text = e.Message; }
 
         if (otherPlayer.Connected) {
             StartGame(false);
