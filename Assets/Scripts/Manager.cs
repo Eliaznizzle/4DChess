@@ -45,11 +45,10 @@ public class Manager : MonoBehaviour {
 
     List<(byte[], int)> netData = new List<(byte[], int)>();
 
+    Task host;
     Task receive;
 
     public bool singlePlayerTest; //REMOVE THIS. IN FINAL BUILD THIS IS TO ALWAYS BE CONSIDERED FALSE
-
-    Task host;
     void Start() {
         Thread.CurrentThread.CurrentUICulture = new CultureInfo("en-us");
         Initialize();
@@ -107,7 +106,11 @@ public class Manager : MonoBehaviour {
             listener.Listen(1);
             Debug.Log("Listening for connections...");
 
-            otherPlayer = listener.Accept();
+            try {
+                otherPlayer = listener.Accept();
+            } catch (Exception e) {
+                Debug.Log(e.Message);
+            }
 
             StartGame(true);
         });
