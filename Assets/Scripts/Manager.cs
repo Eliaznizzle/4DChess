@@ -31,30 +31,31 @@ public class Manager : MonoBehaviour {
     public GameObject DebugTextPrefab;
     List<GameObject> DebugLines = new List<GameObject>();
 
-    public Text myIP;
-    public Text error;
-
-    int port;
+    public InputField nameInput;
 
     public System.Random random;
 
-    Socket otherPlayer;
+    string url = "http://4dchess.club/server";
+    int netID;
+    string opName;
+
+    bool matchmake;
+    List<string[]> netData = new List<string[]>();
+
 
     public GameObject boardPrefab;
     public Board board;
 
-    List<(byte[], int)> netData = new List<(byte[], int)>();
-
-    Task host;
-    Task receive;
-
     public bool singlePlayerTest; //REMOVE THIS. IN FINAL BUILD THIS IS TO ALWAYS BE CONSIDERED FALSE
     void Start() {
+        Print("Debug log initiated.");
         Thread.CurrentThread.CurrentUICulture = new CultureInfo("en-us");
         Initialize();
+        UpdateName();
         if (singlePlayerTest) {
             StartGame(true);
         }
+
     }
 
     void Initialize() {
@@ -64,126 +65,78 @@ public class Manager : MonoBehaviour {
 
         mainMenu = Instantiate(mainMenuPrefab, screenCanvas);
 
-        foreach (InputField ui in mainMenu.GetComponentsInChildren<InputField>()) {
-            switch (ui.gameObject.name) {
-                case "IP Input":
-                    iPInput = ui;
-                    break;
-                case "Port Input":
-                    portInput = ui;
-                    break;
-                default:
-                    break;
+        foreach (Component ui in mainMenu.GetComponentsInChildren<Component>()) {
+            if (ui.GetType() == typeof(InputField) && ui.gameObject.name == "Name") {
+                nameInput = (InputField)ui;
+                nameInput.onEndEdit.AddListener(ChangeName);
+            } else if (ui.GetType() == typeof(Button) && ui.gameObject.name == "PlayButton") {
+                ((Button)ui).onClick.AddListener(Play);
+            }
+
+        }
+    }
+
+    public void Play() {
+        if (!matchmake) {
+            Debug.Log("Got here");
+            string localPlayerName = PlayerPrefs.GetString("name");
+            Debug.Log("And here?");
+            if (localPlayerName == "") { localPlayerName = "Guest"; }
+            Debug.Log("Getting web data");
+            string[] data = WebMatchmake(localPlayerName).Split('.');
+            Debug.Log(" What about here?");
+            Debug.Log("Got web data");
+            if (data.Length == 1) {
+                //Waiting for match
+                netID = int.Parse(data[0]);
+                Debug.Log(netID);
+                Task.Run(() => {
+                    while (matchmake && this) {
+                        Thread.Sleep(2000);
+                        Print("Checking for match, id = " + netID);
+                        data = WebReceive().Split('.');
+                        netData.Add(data);
+                    }
+                    WebCancelMatchmaking();
+                });
+            } else if (data.Length == 2) {
+                //Found match
+                netID = int.Parse(data[0]);
+                opName = data[1];
+                WebSend("name." + PlayerPrefs.GetString("name"));
+                Debug.Log(opName);
+                StartGame(false);
+            } else {
+                throw new Exception("Matchmaking data (" + string.Join(".", data) + ")had an invalid length");
             }
         }
-
-        foreach (Text ui in mainMenu.GetComponentsInChildren<Text>()) {
-            switch (ui.gameObject.name) {
-                case "My IP":
-                    myIP = ui;
-                    break;
-                case "Error":
-                    error = ui;
-                    break;
-                default:
-                    break;
-            }
-        }
-
-        mainMenu.GetComponentInChildren<Button>().onClick.AddListener(Connect);
-
-        Socket listener = new Socket(SocketType.Stream, ProtocolType.Tcp);
-        port = random.Next(2000, 3000);
-        host = Task.Run(() => {
-            foreach (IPAddress address in Dns.GetHostEntry(Dns.GetHostName()).AddressList) {
-                if (address.AddressFamily == AddressFamily.InterNetwork && (address.ToString().Split('.')[0] == "192" || address.ToString().Split('.')[0] == "10")) {
-                    myIP.text = "Your ip: " + address + " Your port: " + port;
-                    IPEndPoint ep = new IPEndPoint(address, port);
-                    listener.Bind(ep);
-                    break;
-                }
-            }
-            listener.Listen(1);
-            Debug.Log("Listening for connections...");
-
-            try {
-                otherPlayer = listener.Accept();
-            } catch (Exception e) {
-                Debug.Log(e.Message);
-            }
-
-            StartGame(true);
-        });
     }
 
     private void Update() {
         if (Input.GetButtonDown("Cancel")) {
+            WebCancelMatchmaking();
             Application.Quit();
         }
+
+        /*if (board != null && board.gameStarted && !board.playerTurn) {
+            timeBtwUpdates += Time.deltaTime;
+            Print("Updating");
+            Task.Run(() => {
+                if (timeSinceUpdate >= timeBtwUpdates) {
+                    netData.Add(WebReceive().Split('.'));
+                    timeSinceUpdate = 0;
+                }
+            });
+
+        }*/
+
         if (netData.Count > 0) {
-            Print("We got data boys");
-            string dataString = Encoding.ASCII.GetString(netData[0].Item1, 0, netData[0].Item2);
-            Print(dataString);
-            if (dataString.Length == 8) {
-                Print("Data length is 8 - opponent made move.");
-                int[] piecePos = new int[4];
-                int[] move = new int[4];
-                for (int i = 0; i < 4; i++) {
-                    piecePos[i] = (int)Char.GetNumericValue(dataString[i]);
-                }
-                for (int i = 0; i < 4; i++) {
-                    move[i] = (int)Char.GetNumericValue(dataString[i + 4]);
-                }
-                Print("Got here");
-                board.Index(piecePos).Move(move);
-                Print("Got here?");
-                board.playerTurn = true;
-                board.Index(move).GoHome();
-            } else if (dataString.Length == 9) {
-                Print("Data length is 9 - opponent made move and promoted a piece.");
-                int[] piecePos = new int[4];
-                int[] move = new int[4];
-                for (int i = 0; i < 4; i++) {
-                    piecePos[i] = (int)Char.GetNumericValue(dataString[i]);
-                }
-                for (int i = 0; i < 4; i++) {
-                    move[i] = (int)Char.GetNumericValue(dataString[i + 4]);
-                }
-                ChessPiece piece = board.Index(piecePos);
-                piece.Move(move);
-                Print("Got here");
-                board.SpawnPiece(move[0], move[1], move[2], move[3], (int)Char.GetNumericValue(dataString[8]), piece.black);
-                board.playerTurn = true;
-                Print("Got here too");
-                board.Index(move).GoHome();
-                Print("How about here?");
-            } else {
-                Print("wtf? data length is " + dataString.Length);
-            }
-            netData.RemoveAt(0);
-        }
-    }
-
-    public void Connect() {
-
-
-        IPAddress iP;
-        int targetPort;
-        try {
-            iP = IPAddress.Parse(iPInput.textComponent.text);
-            targetPort = int.Parse(portInput.text);
-        } catch (Exception e) { error.text = e.Message; return; }
-        try {
-            otherPlayer = new Socket(SocketType.Stream, ProtocolType.Tcp);
-            otherPlayer.Connect(new IPEndPoint(iP, targetPort));
-        } catch (Exception e) { error.text = e.Message; }
-
-        if (otherPlayer.Connected) {
-            StartGame(false);
+            HandleData(netData[0]);
         }
     }
 
     void StartGame(bool isHost) {
+        Print("StartGame was called");
         mainMenu.SetActive(false);
         board = Instantiate(boardPrefab).GetComponent<Board>();
         gameUI = Instantiate(gameUIPrefab);
@@ -192,22 +145,50 @@ public class Manager : MonoBehaviour {
             if (isHost) {
                 board.localPlayerBlack = random.NextDouble() >= 0.5;
                 if (!singlePlayerTest) {
+                    WebSend((!board.localPlayerBlack).ToString());
+                    Print("Get here mebe?");
+                    /*
                     otherPlayer.Send(new byte[] { Convert.ToByte(!board.localPlayerBlack) });
+                    */
                 }
             } else {
-                byte[] data = new byte[4];
                 if (!singlePlayerTest) {
+                    Print("Is player black?");
+                    int i = 0;
+                    while (true) {
+                        i++;
+                        Thread.Sleep(2000);
+                        string isBlackString = WebReceive();
+                        Print(isBlackString);
+                        try {
+                            board.localPlayerBlack = bool.Parse(isBlackString);
+                            break;
+                        } catch (Exception e) {
+                            Print("Error! " + e.Message);
+                        }
+                        if (i > 10) {
+                            mainMenu.SetActive(true);
+                            Destroy(board);
+                            Destroy(gameUI);
+                            return;
+                        }
+                    }
+
+                    /*byte[] data = new byte[4];
                     otherPlayer.Receive(data);
+                    board.localPlayerBlack = Convert.ToBoolean(data[0]);*/
                 }
-                board.localPlayerBlack = Convert.ToBoolean(data[0]);
             }
+
+            Task.Run(() => {
+                while (this) {
+                    Thread.Sleep(2000);
+                    netData.Add(WebReceive().Split('.'));
+                }
+            });
         } else { board.localPlayerBlack = false; }
+        Debug.Log("Setting board manager");
         board.manager = this;
-        receive = Task.Run(() => {
-            while (this) {
-                netData.Add(ReceiveData());
-            }
-        });
         board.gameStarted = true;
     }
 
@@ -217,15 +198,17 @@ public class Manager : MonoBehaviour {
     }
 
     public void PassTurn(int[] piece, int[] move) {
-        byte[] data = Encoding.ASCII.GetBytes($"{piece[0]}{piece[1]}{piece[2]}{piece[3]}{move[0]}{move[1]}{move[2]}{move[3]}");
+        string data = $"move.{piece[0]}{piece[1]}{piece[2]}{piece[3]}.{move[0]}{move[1]}{move[2]}{move[3]}";
         Debug.Log($"Sending move {piece[0]}{piece[1]}{piece[2]}{piece[3]} to {move[0]}{move[1]}{move[2]}{move[3]}");
-        otherPlayer.Send(data);
+        WebSend(data);
+        /*otherPlayer.Send(data);*/
     }
 
     public void PassTurnPromotion(int[] piece, int[] move, int index) {
-        byte[] data = Encoding.ASCII.GetBytes($"{piece[0]}{piece[1]}{piece[2]}{piece[3]}{move[0]}{move[1]}{move[2]}{move[3]}{index}");
+        string data = $"promote.{piece[0]}{piece[1]}{piece[2]}{piece[3]}.{move[0]}{move[1]}{move[2]}{move[3]}.{index}";
         Debug.Log($"Sending move {piece[0]}{piece[1]}{piece[2]}{piece[3]} to {move[0]}{move[1]}{move[2]}{move[3]} with promotion to {index}");
-        otherPlayer.Send(data);
+        WebSend(data);
+        /*otherPlayer.Send(data);*/
     }
 
     public void EndGame(bool win) {
@@ -240,17 +223,81 @@ public class Manager : MonoBehaviour {
         }
     }
 
+    public void HandleData(string[] data) {
+        netData.Remove(data);
+        Print(string.Join(".", data));
+        if (data[0] == "") { return; }
+
+        if (data[0] == "move") {
+            int[] piecePos = Array.ConvertAll(data[1].ToCharArray(), c => (int)Char.GetNumericValue(c));
+            int[] move = Array.ConvertAll(data[2].ToCharArray(), c => (int)Char.GetNumericValue(c));
+            Print("Got here");
+            board.Index(piecePos).Move(move);
+            Print("Got here?");
+            board.playerTurn = true;
+            board.Index(move).GoHome();
+        } else if (data[0] == "promote") {
+            Print("Data length is 9 - opponent made move and promoted a piece.");
+            int[] piecePos = Array.ConvertAll(data[1].Split('.'), s => int.Parse(s));
+            int[] move = Array.ConvertAll(data[2].Split('.'), s => int.Parse(s)); 
+            ChessPiece piece = board.Index(piecePos);
+            piece.Move(move);
+            Print("Got here");
+            board.SpawnPiece(move[0], move[1], move[2], move[3], int.Parse(data[3]), piece.black);
+            board.playerTurn = true;
+            Print("Got here too");
+            board.Index(move).GoHome();
+            Print("How about here?");
+        } else if (data[0] == "name") {
+            if (data[0] != "") {
+                matchmake = false;
+                opName = data[0];
+                StartGame(true);
+            }
+        } else {
+            Print("wtf? data length is " + data.Length);
+        }
+    }
+
+    /*
     public (byte[], int) ReceiveData() {
         byte[] data = new byte[1024];
         int length = otherPlayer.Receive(data);
         Debug.Log("Received data");
         return (data, length);
+    }*/
+
+    string WebMatchmake(string localPlayerName) {
+        matchmake = true;
+        return new WebClient().DownloadString(url + "?intent=matchmake&name=" + localPlayerName);
+    }
+
+    string WebCancelMatchmaking() {
+        matchmake = false;
+        return new WebClient().DownloadString(url + "?intent=cancel&id=" + netID);
+    }
+
+    string WebSend(string data) {
+        Debug.Log("Sending " + data);
+        return new WebClient().DownloadString(url + "?intent=send&id=" + netID + "&data=" + data);
+    }
+
+    string WebReceive() {
+        return new WebClient().DownloadString(url + "?intent=receive&id=" + netID);
+    }
+
+    public void UpdateName() {
+        nameInput.text = PlayerPrefs.GetString("name");
+    }
+
+    public void ChangeName(string name) {
+        PlayerPrefs.SetString("name", nameInput.text);
     }
 
     public void Print(string text) {
         Debug.Log(text);
         foreach (GameObject line in DebugLines) {
-            line.GetComponent<RectTransform>().localPosition += new Vector3(0, -150, 0);
+            line.GetComponent<RectTransform>().localPosition += new Vector3(0, -15, 0);
         }
 
         GameObject newLine = Instantiate(DebugTextPrefab, screenCanvas);

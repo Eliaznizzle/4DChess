@@ -48,6 +48,7 @@ public class Board : MonoBehaviour {
     int up = 1;
 
     private void Start() {
+        Debug.Log("Hi?");
         if (localPlayerBlack) { up = -1; playerTurn = false; } else { playerTurn = true; }
 
         piecePrefabs = new GameObject[] { whiteKing, whiteQueen, whiteBishop, whiteKnight, whiteRook, whitePawn, blackKing, blackQueen, blackBishop, blackKnight, blackRook, blackPawn };
@@ -79,6 +80,7 @@ public class Board : MonoBehaviour {
             if (grab[0] != -1) {
                 ChessPiece piece = Index(grab);
                 piece.grab = false;
+                Debug.Log("got here");
                 if (Stuff.WithinBounds(hover)) {
                     playerTurn = false;
                     if (piece.Move(hover) && !manager.singlePlayerTest) {
@@ -236,6 +238,7 @@ public class Board : MonoBehaviour {
     }
 
     public ChessPiece Index(int[] index) {
+        print(string.Join(".", index));
         return pieces[index[0], index[1], index[2], index[3]];
     }
 
