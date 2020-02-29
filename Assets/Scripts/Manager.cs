@@ -93,7 +93,6 @@ public class Manager : MonoBehaviour {
                 Task.Run(() => {
                     while (matchmake && this) {
                         Thread.Sleep(2000);
-                        Print("Checking for match, id = " + netID);
                         data = WebReceive().Split('.');
                         netData.Add(data);
                     }
@@ -231,18 +230,17 @@ public class Manager : MonoBehaviour {
         if (data[0] == "move") {
             int[] piecePos = Array.ConvertAll(data[1].ToCharArray(), c => (int)Char.GetNumericValue(c));
             int[] move = Array.ConvertAll(data[2].ToCharArray(), c => (int)Char.GetNumericValue(c));
-            Print("Got here");
             board.Index(piecePos).Move(move);
-            Print("Got here?");
             board.playerTurn = true;
             board.Index(move).GoHome();
         } else if (data[0] == "promote") {
-            Print("Data length is 9 - opponent made move and promoted a piece.");
-            int[] piecePos = Array.ConvertAll(data[1].Split('.'), s => int.Parse(s));
-            int[] move = Array.ConvertAll(data[2].Split('.'), s => int.Parse(s)); 
+            int[] piecePos = Array.ConvertAll(data[1].ToCharArray(), c => (int)Char.GetNumericValue(c));
+            int[] move = Array.ConvertAll(data[2].ToCharArray(), c => (int)Char.GetNumericValue(c));
+            Print("assigned arrays");
             ChessPiece piece = board.Index(piecePos);
+            Print("Got piece");
             piece.Move(move);
-            Print("Got here");
+            Print("Moved");
             board.SpawnPiece(move[0], move[1], move[2], move[3], int.Parse(data[3]), piece.black);
             board.playerTurn = true;
             Print("Got here too");
