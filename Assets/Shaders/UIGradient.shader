@@ -109,6 +109,11 @@ Shader "Custom/UIGradient"
 					clip(color.a - 0.001);
 					#endif
 
+					//If color is pure black, just return it
+					if (color.r + color.g + color.b == 0){
+						return color;
+					}
+
 					//Gradient stuff
 					half4 mod = 0.5 - pow(IN.texcoord.y, 0.2);
 					mod.a = 0;

@@ -19,20 +19,21 @@ public class Promotion : MonoBehaviour {
             piece.transform.position.y * (manager.canvas.pixelRect.height / (Camera.main.orthographicSize * 2))
             ) * 10;*/
         transform.position = piece.transform.position;
+        UpdatePiece();
     }
 
-    public void Change() {
+    public void UpdatePiece() {
         piece = manager.board.SpawnPiece(piece.position[0], piece.position[1], piece.position[2], piece.position[3], index + 1, piece.black);
     }
 
     public void ChangeRight() {
         if (index < 3) { index++; } else index = 0;
-        Change();
+        UpdatePiece();
     }
 
     public void ChangeLeft() {
         if (index > 0) { index--; } else index = 3;
-        Change();
+        UpdatePiece();
     }
 
     public void Confirm() {

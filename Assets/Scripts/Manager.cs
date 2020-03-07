@@ -10,18 +10,19 @@ using System.Globalization;
 using System.Threading;
 using System.Text;
 using UnityEngine.SceneManagement;
+using System.Linq;
 
 public class Manager : MonoBehaviour {
-    public GameObject mainMenuPrefab;
-    public GameObject mainMenu;
-    public InputField iPInput;
-    public InputField portInput;
-
     public RectTransform screenCanvas;
     public RectTransform worldCanvas;
 
-    public GameObject gameUIPrefab;
+    public GameObject mainMenu;
     public GameObject gameUI;
+    public GameObject popupMenu;
+    public GameObject settingsMenu;
+    public GameObject matchmakingWindow;
+
+    public InputField nameInput;
 
     public GameObject gameEndMenuPrefab;
     public Text result;
@@ -31,8 +32,6 @@ public class Manager : MonoBehaviour {
     public GameObject DebugTextPrefab;
     List<GameObject> DebugLines = new List<GameObject>();
 
-    public InputField nameInput;
-
     public System.Random random;
 
     string url = "http://4dchess.club/server";
@@ -40,6 +39,8 @@ public class Manager : MonoBehaviour {
     string opName;
 
     bool matchmake;
+    Task startMatchmaking;
+    Task cancelMatchmaking;
     List<string[]> netData = new List<string[]>();
 
 
@@ -61,53 +62,22 @@ public class Manager : MonoBehaviour {
     void Initialize() {
         DontDestroyOnLoad(gameObject);
 
+        mainMenu.SetActive(true);
+
         random = new System.Random();
-
-        mainMenu = Instantiate(mainMenuPrefab, screenCanvas);
-
-        foreach (Component ui in mainMenu.GetComponentsInChildren<Component>()) {
-            if (ui.GetType() == typeof(InputField) && ui.gameObject.name == "Name") {
-                nameInput = (InputField)ui;
-                nameInput.onEndEdit.AddListener(ChangeName);
-            } else if (ui.GetType() == typeof(Button) && ui.gameObject.name == "PlayButton") {
-                ((Button)ui).onClick.AddListener(Play);
-            }
-
-        }
     }
 
     public void Play() {
         if (!matchmake) {
-            Debug.Log("Got here");
+            //If there is a matchmaking task that has yet not been killed, wait for it. It should die. If it does not, program will crash and I deserve that for messing up
+            if (cancelMatchmaking != null) { cancelMatchmaking.Wait(); }
             string localPlayerName = PlayerPrefs.GetString("name");
-            Debug.Log("And here?");
             if (localPlayerName == "") { localPlayerName = "Guest"; }
-            Debug.Log("Getting web data");
-            string[] data = WebMatchmake(localPlayerName).Split('.');
-            Debug.Log(" What about here?");
-            Debug.Log("Got web data");
-            if (data.Length == 1) {
-                //Waiting for match
-                netID = int.Parse(data[0]);
-                Debug.Log(netID);
-                Task.Run(() => {
-                    while (matchmake && this) {
-                        Thread.Sleep(2000);
-                        data = WebReceive().Split('.');
-                        netData.Add(data);
-                    }
-                    WebCancelMatchmaking();
-                });
-            } else if (data.Length == 2) {
-                //Found match
-                netID = int.Parse(data[0]);
-                opName = data[1];
-                WebSend("name." + PlayerPrefs.GetString("name"));
-                Debug.Log(opName);
-                StartGame(false);
-            } else {
-                throw new Exception("Matchmaking data (" + string.Join(".", data) + ")had an invalid length");
-            }
+            ToggleMatchmakingWindow(true);
+            startMatchmaking = Task.Run(() => {
+                netData.Add(new string[] { "matchmake" }.Concat(WebMatchmake(localPlayerName).Split('.')).ToArray());
+            });
+
         }
     }
 
@@ -116,18 +86,6 @@ public class Manager : MonoBehaviour {
             WebCancelMatchmaking();
             Application.Quit();
         }
-
-        /*if (board != null && board.gameStarted && !board.playerTurn) {
-            timeBtwUpdates += Time.deltaTime;
-            Print("Updating");
-            Task.Run(() => {
-                if (timeSinceUpdate >= timeBtwUpdates) {
-                    netData.Add(WebReceive().Split('.'));
-                    timeSinceUpdate = 0;
-                }
-            });
-
-        }*/
 
         if (netData.Count > 0) {
             HandleData(netData[0]);
@@ -138,7 +96,7 @@ public class Manager : MonoBehaviour {
         Print("StartGame was called");
         mainMenu.SetActive(false);
         board = Instantiate(boardPrefab).GetComponent<Board>();
-        gameUI = Instantiate(gameUIPrefab);
+        gameUI.SetActive(true);
         if (!singlePlayerTest) {
             //Debug.Log("Connected to " + ((IPEndPoint)otherPlayer.RemoteEndPoint).Address);
             if (isHost) {
@@ -252,6 +210,29 @@ public class Manager : MonoBehaviour {
                 opName = data[0];
                 StartGame(true);
             }
+        } else if (data[0] == "matchmake") {
+            if (data.Length == 2) {
+                //Waiting for match
+                netID = int.Parse(data[1]);
+                Debug.Log(netID);
+                Task.Run(() => {
+                    while (matchmake && this) {
+                        Thread.Sleep(2000);
+                        data = WebReceive().Split('.');
+                        netData.Add(data);
+                    }
+                    WebCancelMatchmaking();
+                });
+            } else if (data.Length == 3) {
+                //Found match
+                netID = int.Parse(data[1]);
+                opName = data[2];
+                WebSend("name." + PlayerPrefs.GetString("name"));
+                Debug.Log(opName);
+                StartGame(false);
+            } else {
+                throw new Exception("Matchmaking data (" + string.Join(".", data) + ")had an invalid length");
+            }
         } else {
             Print("wtf? data length is " + data.Length);
         }
@@ -288,8 +269,29 @@ public class Manager : MonoBehaviour {
         nameInput.text = PlayerPrefs.GetString("name");
     }
 
-    public void ChangeName(string name) {
+    public void ChangeName() {
         PlayerPrefs.SetString("name", nameInput.text);
+    }
+
+    public void ToggleMenu(bool active) {
+        popupMenu.SetActive(active);
+    }
+
+    public void ToggleSettings(bool active) {
+        settingsMenu.SetActive(active);
+    }
+
+    public void ToggleMatchmakingWindow(bool active) {
+        matchmakingWindow.SetActive(active);
+    }
+
+    public void CancelMatchmaking() {
+
+        cancelMatchmaking = Task.Run(() => {
+            WebCancelMatchmaking();
+        });
+        matchmake = false;
+        ToggleMatchmakingWindow(false);
     }
 
     public void Print(string text) {
