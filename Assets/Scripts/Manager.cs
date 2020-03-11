@@ -47,6 +47,8 @@ public class Manager : MonoBehaviour {
     public GameObject boardPrefab;
     public Board board;
 
+    public SettingsController settings;
+
     public bool singlePlayerTest; //REMOVE THIS. IN FINAL BUILD THIS IS TO ALWAYS BE CONSIDERED FALSE
     void Start() {
         Print("Debug log initiated.");
@@ -60,6 +62,8 @@ public class Manager : MonoBehaviour {
     }
 
     void Initialize() {
+        settings.UpdateSettings();
+
         DontDestroyOnLoad(gameObject);
 
         mainMenu.SetActive(true);
@@ -95,6 +99,7 @@ public class Manager : MonoBehaviour {
     void StartGame(bool isHost) {
         Print("StartGame was called");
         mainMenu.SetActive(false);
+        ToggleMatchmakingWindow(false);
         board = Instantiate(boardPrefab).GetComponent<Board>();
         gameUI.SetActive(true);
         if (!singlePlayerTest) {

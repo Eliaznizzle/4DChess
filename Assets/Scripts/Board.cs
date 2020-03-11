@@ -48,7 +48,8 @@ public class Board : MonoBehaviour {
     int up = 1;
 
     private void Start() {
-        Debug.Log("Hi?");
+        GetComponent<AudioSource>().volume = PlayerPrefs.GetFloat("volume");
+
         if (localPlayerBlack) { up = -1; playerTurn = false; } else { playerTurn = true; }
 
         piecePrefabs = new GameObject[] { whiteKing, whiteQueen, whiteBishop, whiteKnight, whiteRook, whitePawn, blackKing, blackQueen, blackBishop, blackKnight, blackRook, blackPawn };

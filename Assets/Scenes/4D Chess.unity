@@ -1342,7 +1342,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &655309725
 RectTransform:
   m_ObjectHideFlags: 0
@@ -2320,8 +2320,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9d3e38449870b3949b10d910ffb6e296, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  postProcessing: {fileID: 0}
-  volume: {fileID: 0}
+  postProcessing: {fileID: 1900386928}
+  volume: {fileID: 1954804626}
 --- !u!114 &1407496797
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2949,7 +2949,7 @@ MonoBehaviour:
       m_Calls:
       - m_Target: {fileID: 2074671250}
         m_MethodName: PostProcessing
-        m_Mode: 6
+        m_Mode: 1
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
           m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
@@ -3099,7 +3099,7 @@ MonoBehaviour:
       m_Calls:
       - m_Target: {fileID: 2074671250}
         m_MethodName: Volume
-        m_Mode: 3
+        m_Mode: 1
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
           m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
@@ -4612,5 +4612,10 @@ PrefabInstance:
       propertyPath: matchmakingWindow
       value: 
       objectReference: {fileID: 655309724}
+    - target: {fileID: 6754188892827001339, guid: 6998e6a3e2d3c2241ba9f450a348bcc5,
+        type: 3}
+      propertyPath: settings
+      value: 
+      objectReference: {fileID: 1407496796}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 6998e6a3e2d3c2241ba9f450a348bcc5, type: 3}
