@@ -18,11 +18,12 @@ public class Manager : MonoBehaviour {
 
     public GameObject mainMenu;
     public GameObject gameUI;
-    public GameObject popupMenu;
+    public GameObject pauseMenu;
     public GameObject settingsMenu;
     public GameObject matchmakingWindow;
-
-    public InputField nameInput;
+    public GameObject welcomeWindow;
+    public GameObject loginWindow;
+    public GameObject registerWindow;
 
     public GameObject gameEndMenuPrefab;
     public Text result;
@@ -54,7 +55,6 @@ public class Manager : MonoBehaviour {
         Print("Debug log initiated.");
         Thread.CurrentThread.CurrentUICulture = new CultureInfo("en-us");
         Initialize();
-        UpdateName();
         if (singlePlayerTest) {
             StartGame(true);
         }
@@ -69,14 +69,21 @@ public class Manager : MonoBehaviour {
         mainMenu.SetActive(true);
 
         random = new System.Random();
+
+        string username = PlayerPrefs.GetString("username");
+        if (username == null) {
+            welcomeWindow.SetActive(true);
+            mainMenu.transform.Find("Username").GetComponent<Text>().text = "";
+        } else {
+            mainMenu.transform.Find("Username").GetComponent<Text>().text = "Logged in as " + PlayerPrefs.GetString("username");
+        }
     }
 
     public void Play() {
         if (!matchmake) {
             //If there is a matchmaking task that has yet not been killed, wait for it. It should die. If it does not, program will crash and I deserve that for messing up
             if (cancelMatchmaking != null) { cancelMatchmaking.Wait(); }
-            string localPlayerName = PlayerPrefs.GetString("name");
-            if (localPlayerName == "") { localPlayerName = "Guest"; }
+            string localPlayerName = PlayerPrefs.GetString("username");
             ToggleMatchmakingWindow(true);
             startMatchmaking = Task.Run(() => {
                 netData.Add(new string[] { "matchmake" }.Concat(WebMatchmake(localPlayerName).Split('.')).ToArray());
@@ -232,7 +239,7 @@ public class Manager : MonoBehaviour {
                 //Found match
                 netID = int.Parse(data[1]);
                 opName = data[2];
-                WebSend("name." + PlayerPrefs.GetString("name"));
+                WebSend("name." + PlayerPrefs.GetString("username"));
                 Debug.Log(opName);
                 StartGame(false);
             } else {
@@ -250,6 +257,57 @@ public class Manager : MonoBehaviour {
         Debug.Log("Received data");
         return (data, length);
     }*/
+
+    public void Login() {
+        try {
+            InputField[] fields = loginWindow.GetComponentsInChildren<InputField>();
+            if (fields[0].text == "" || fields[1].text == "") {
+                throw new Exception("Enter username and password");
+            }
+            string[] data = WebLogin(fields[0].text, fields[1].text).Split('.');
+            if (data[0] == "0") {
+                PlayerPrefs.SetString("username", fields[0].text);
+                mainMenu.transform.Find("Username").GetComponent<Text>().text = "Logged in as " + PlayerPrefs.GetString("username");
+                welcomeWindow.SetActive(false);
+            } else {
+                throw new Exception(data[1]);
+            }
+
+        } catch (Exception e) {
+            loginWindow.transform.Find("Login").transform.Find("Error").GetComponent<Text>().text = e.Message;
+        }
+    }
+
+    public void Register() {
+        try {
+            InputField[] fields = registerWindow.GetComponentsInChildren<InputField>();
+            if (fields[0].text == "" || fields[1].text == "") {
+                throw new Exception("Enter username and password");
+            }
+            string[] data = WebRegister(fields[0].text, fields[1].text).Split('.');
+            if (data[0] == "0") {
+                PlayerPrefs.SetString("username", fields[0].text);
+                mainMenu.transform.Find("Username").GetComponent<Text>().text = "Logged in as " + PlayerPrefs.GetString("username");
+                welcomeWindow.SetActive(false);
+            } else {
+                throw new Exception(data[1]);
+            }
+
+        } catch (Exception e) {
+            registerWindow.transform.Find("Register").transform.Find("Error").GetComponent<Text>().text = e.StackTrace;
+        }
+    }
+
+    public void LogOut() {
+        PlayerPrefs.SetString("username", null);
+        mainMenu.transform.Find("Username").GetComponent<Text>().text = "";
+        pauseMenu.SetActive(false);
+        welcomeWindow.SetActive(true);
+    }
+
+    public void Exit() {
+        Environment.Exit(0);
+    }
 
     string WebMatchmake(string localPlayerName) {
         matchmake = true;
@@ -270,16 +328,19 @@ public class Manager : MonoBehaviour {
         return new WebClient().DownloadString(url + "?intent=receive&id=" + netID);
     }
 
-    public void UpdateName() {
-        nameInput.text = PlayerPrefs.GetString("name");
+    string WebLogin(string username, string password) {
+        return new WebClient().DownloadString(url + "?intent=login&username=" + username + "&password=" + password);
+    }
+    string WebRegister(string username, string password) {
+        return new WebClient().DownloadString(url + "?intent=register&username=" + username + "&password=" + password);
     }
 
-    public void ChangeName() {
-        PlayerPrefs.SetString("name", nameInput.text);
+    string WebGetStats(string username) {
+        return new WebClient().DownloadString(url + "?intent=getStats&username=" + username);
     }
 
     public void ToggleMenu(bool active) {
-        popupMenu.SetActive(active);
+        pauseMenu.SetActive(active);
     }
 
     public void ToggleSettings(bool active) {
@@ -288,6 +349,17 @@ public class Manager : MonoBehaviour {
 
     public void ToggleMatchmakingWindow(bool active) {
         matchmakingWindow.SetActive(active);
+    }
+
+    public void ToggleWelcome(bool active) {
+        welcomeWindow.SetActive(active);
+    }
+
+    public void ToggleLogin(bool active) {
+        loginWindow.SetActive(active);
+    }
+    public void ToggleRegister(bool active) {
+        registerWindow.SetActive(active);
     }
 
     public void CancelMatchmaking() {
