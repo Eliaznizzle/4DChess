@@ -18,11 +18,12 @@ public class Manager : MonoBehaviour {
 
     public GameObject mainMenu;
     public GameObject gameUI;
-    public GameObject popupMenu;
+    public GameObject pauseMenu;
     public GameObject settingsMenu;
     public GameObject matchmakingWindow;
-
-    public InputField nameInput;
+    public GameObject welcomeWindow;
+    public GameObject loginWindow;
+    public GameObject registerWindow;
 
     public GameObject gameEndMenuPrefab;
     public Text result;
@@ -56,7 +57,6 @@ public class Manager : MonoBehaviour {
         Print("Debug log initiated.");
         Thread.CurrentThread.CurrentUICulture = new CultureInfo("en-us");
         Initialize();
-        UpdateName();
         if (singlePlayerTest) {
             StartGame(true);
         }
@@ -71,7 +71,6 @@ public class Manager : MonoBehaviour {
         mainMenu.SetActive(true);
 
         random = new System.Random();
-<<<<<<< HEAD
 
         string username = PlayerPrefs.GetString("username");
         if (username == null) {
@@ -81,16 +80,13 @@ public class Manager : MonoBehaviour {
                 welcomeWindow.SetActive(false);
             }
         }
-=======
->>>>>>> parent of 959658e... Logging in and out works
     }
 
     public void Play() {
         if (!matchmake) {
             //If there is a matchmaking task that has yet not been killed, wait for it. It should die. If it does not, program will crash and I deserve that for messing up
             if (cancelMatchmaking != null) { cancelMatchmaking.Wait(); }
-            string localPlayerName = PlayerPrefs.GetString("name");
-            if (localPlayerName == "") { localPlayerName = "Guest"; }
+            string localPlayerName = PlayerPrefs.GetString("username");
             ToggleMatchmakingWindow(true);
             startMatchmaking = Task.Run(() => {
                 netData.Add(new string[] { "matchmake" }.Concat(WebMatchmake(localPlayerName).Split('.')).ToArray());
@@ -254,11 +250,7 @@ public class Manager : MonoBehaviour {
                 //Found match
                 netID = int.Parse(data[1]);
                 opName = data[2];
-<<<<<<< HEAD
                 WebSend("name." + PlayerPrefs.GetString("username"), PlayerPrefs.GetString("username"));
-=======
-                WebSend("name." + PlayerPrefs.GetString("name"));
->>>>>>> parent of 959658e... Logging in and out works
                 Debug.Log(opName);
                 StartGame(false);
             } else {
@@ -269,7 +261,6 @@ public class Manager : MonoBehaviour {
         }
     }
 
-<<<<<<< HEAD
     public void Login() {
         try {
             InputField[] fields = loginWindow.GetComponentsInChildren<InputField>();
@@ -342,15 +333,6 @@ public class Manager : MonoBehaviour {
     public void Exit() {
         Application.Quit();
     }
-=======
-    /*
-    public (byte[], int) ReceiveData() {
-        byte[] data = new byte[1024];
-        int length = otherPlayer.Receive(data);
-        Debug.Log("Received data");
-        return (data, length);
-    }*/
->>>>>>> parent of 959658e... Logging in and out works
 
     string WebMatchmake(string localPlayerName) {
         matchmake = true;
@@ -372,12 +354,15 @@ public class Manager : MonoBehaviour {
         return new WebClient().DownloadString(url + "?sessionID=" + sessionID + "&intent=receive&id=" + netID + "&user=" + localPlayerName);
     }
 
-    public void UpdateName() {
-        nameInput.text = PlayerPrefs.GetString("name");
+    string WebLogin(string username, string password) {
+        return new WebClient().DownloadString(url + "?intent=login&username=" + username + "&password=" + password);
+    }
+    string WebRegister(string username, string password) {
+        return new WebClient().DownloadString(url + "?intent=register&username=" + username + "&password=" + password);
     }
 
-    public void ChangeName() {
-        PlayerPrefs.SetString("name", nameInput.text);
+    string WebGetStats(string username) {
+        return new WebClient().DownloadString(url + "?intent=getStats&username=" + username);
     }
 
     string WebWin() {
@@ -385,7 +370,7 @@ public class Manager : MonoBehaviour {
     }
 
     public void ToggleMenu(bool active) {
-        popupMenu.SetActive(active);
+        pauseMenu.SetActive(active);
     }
 
     public void ToggleSettings(bool active) {
@@ -394,6 +379,17 @@ public class Manager : MonoBehaviour {
 
     public void ToggleMatchmakingWindow(bool active) {
         matchmakingWindow.SetActive(active);
+    }
+
+    public void ToggleWelcome(bool active) {
+        welcomeWindow.SetActive(active);
+    }
+
+    public void ToggleLogin(bool active) {
+        loginWindow.SetActive(active);
+    }
+    public void ToggleRegister(bool active) {
+        registerWindow.SetActive(active);
     }
 
     public void CancelMatchmaking() {
