@@ -53,6 +53,7 @@ public abstract class ChessPiece : MonoBehaviour {
             position = target;
             board.pieces[target[0], target[1], target[2], target[3]] = this;
             hasMoved = true;
+            board.GetComponent<AudioSource>().Play();
             return true;
         } else { return false; }
     }
