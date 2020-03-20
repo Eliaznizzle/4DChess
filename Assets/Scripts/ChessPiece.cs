@@ -47,6 +47,7 @@ public abstract class ChessPiece : MonoBehaviour {
 
     public bool Move(int[] target) {
         if (IsMoveValid(target)) {
+            board.GetComponent<AudioSource>().Play();
             ChessPiece cap = board.pieces[target[0], target[1], target[2], target[3]];
             if (cap != null) { cap.Die(); }
             board.pieces[position[0], position[1], position[2], position[3]] = null;

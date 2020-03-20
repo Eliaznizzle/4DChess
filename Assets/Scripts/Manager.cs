@@ -101,6 +101,7 @@ public class Manager : MonoBehaviour {
         mainMenu.SetActive(false);
         ToggleMatchmakingWindow(false);
         board = Instantiate(boardPrefab).GetComponent<Board>();
+        gameUI.transform.Find("Playing against").GetComponent<Text>().text = "Playing against " + opName;
         gameUI.SetActive(true);
         if (!singlePlayerTest) {
             //Debug.Log("Connected to " + ((IPEndPoint)otherPlayer.RemoteEndPoint).Address);
@@ -300,6 +301,7 @@ public class Manager : MonoBehaviour {
     }
 
     public void Print(string text) {
+
         Debug.Log(text);
         foreach (GameObject line in DebugLines) {
             line.GetComponent<RectTransform>().localPosition += new Vector3(0, -15, 0);
