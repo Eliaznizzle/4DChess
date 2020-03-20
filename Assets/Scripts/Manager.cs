@@ -37,14 +37,12 @@ public class Manager : MonoBehaviour {
 
     string url = "http://4dchess.club/server";
     int netID;
-    int sessionID;
     string opName;
 
     bool matchmake;
     Task startMatchmaking;
     Task cancelMatchmaking;
     List<string[]> netData = new List<string[]>();
-
 
 
     public GameObject boardPrefab;
@@ -74,11 +72,10 @@ public class Manager : MonoBehaviour {
 
         string username = PlayerPrefs.GetString("username");
         if (username == null) {
+            welcomeWindow.SetActive(true);
             mainMenu.transform.Find("Username").GetComponent<Text>().text = "";
         } else {
-            if (Login(username, PlayerPrefs.GetString("password"))) {
-                welcomeWindow.SetActive(false);
-            }
+            mainMenu.transform.Find("Username").GetComponent<Text>().text = "Logged in as " + PlayerPrefs.GetString("username");
         }
     }
 
@@ -97,7 +94,7 @@ public class Manager : MonoBehaviour {
 
     private void Update() {
         if (Input.GetButtonDown("Cancel")) {
-            WebCancelMatchmaking(PlayerPrefs.GetString("username"));
+            WebCancelMatchmaking();
             Application.Quit();
         }
 
@@ -112,19 +109,12 @@ public class Manager : MonoBehaviour {
         ToggleMatchmakingWindow(false);
         board = Instantiate(boardPrefab).GetComponent<Board>();
         gameUI.SetActive(true);
-        gameUI.transform.Find("Opponent").GetComponent<Text>().text = "Opponent: " + opName;
-        string[] data = WebGetStats(opName).Split('.');
-        if ((int.Parse(data[0]) + int.Parse(data[1])) > 0) {
-            gameUI.transform.Find("Opponent").GetComponent<Text>().text = "W/L: " + (int.Parse(data[0]) / (int.Parse(data[0]) + int.Parse(data[1])) * 100) + "%";
-        } else {
-            gameUI.transform.Find("Opponent").GetComponent<Text>().text = "W/L: N/A";
-        }
         if (!singlePlayerTest) {
             //Debug.Log("Connected to " + ((IPEndPoint)otherPlayer.RemoteEndPoint).Address);
             if (isHost) {
                 board.localPlayerBlack = random.NextDouble() >= 0.5;
                 if (!singlePlayerTest) {
-                    WebSend((!board.localPlayerBlack).ToString(), PlayerPrefs.GetString("username"));
+                    WebSend((!board.localPlayerBlack).ToString());
                     Print("Get here mebe?");
                     /*
                     otherPlayer.Send(new byte[] { Convert.ToByte(!board.localPlayerBlack) });
@@ -137,7 +127,7 @@ public class Manager : MonoBehaviour {
                     while (true) {
                         i++;
                         Thread.Sleep(2000);
-                        string isBlackString = WebReceive(PlayerPrefs.GetString("username"));
+                        string isBlackString = WebReceive();
                         Print(isBlackString);
                         try {
                             board.localPlayerBlack = bool.Parse(isBlackString);
@@ -162,7 +152,7 @@ public class Manager : MonoBehaviour {
             Task.Run(() => {
                 while (this) {
                     Thread.Sleep(2000);
-                    netData.Add(WebReceive(PlayerPrefs.GetString("username")).Split('.'));
+                    netData.Add(WebReceive().Split('.'));
                 }
             });
         } else { board.localPlayerBlack = false; }
@@ -179,14 +169,14 @@ public class Manager : MonoBehaviour {
     public void PassTurn(int[] piece, int[] move) {
         string data = $"move.{piece[0]}{piece[1]}{piece[2]}{piece[3]}.{move[0]}{move[1]}{move[2]}{move[3]}";
         Debug.Log($"Sending move {piece[0]}{piece[1]}{piece[2]}{piece[3]} to {move[0]}{move[1]}{move[2]}{move[3]}");
-        WebSend(data, PlayerPrefs.GetString("username"));
+        WebSend(data);
         /*otherPlayer.Send(data);*/
     }
 
     public void PassTurnPromotion(int[] piece, int[] move, int index) {
         string data = $"promote.{piece[0]}{piece[1]}{piece[2]}{piece[3]}.{move[0]}{move[1]}{move[2]}{move[3]}.{index}";
         Debug.Log($"Sending move {piece[0]}{piece[1]}{piece[2]}{piece[3]} to {move[0]}{move[1]}{move[2]}{move[3]} with promotion to {index}");
-        WebSend(data, PlayerPrefs.GetString("username"));
+        WebSend(data);
         /*otherPlayer.Send(data);*/
     }
 
@@ -206,7 +196,6 @@ public class Manager : MonoBehaviour {
         netData.Remove(data);
         Print(string.Join(".", data));
         if (data[0] == "") { return; }
-        if (data[1] == "-1") { Application.Quit(); }
 
         if (data[0] == "move") {
             int[] piecePos = Array.ConvertAll(data[1].ToCharArray(), c => (int)Char.GetNumericValue(c));
@@ -241,16 +230,16 @@ public class Manager : MonoBehaviour {
                 Task.Run(() => {
                     while (matchmake && this) {
                         Thread.Sleep(2000);
-                        data = WebReceive(PlayerPrefs.GetString("username")).Split('.');
+                        data = WebReceive().Split('.');
                         netData.Add(data);
                     }
-                    WebCancelMatchmaking(PlayerPrefs.GetString("username"));
+                    WebCancelMatchmaking();
                 });
             } else if (data.Length == 3) {
                 //Found match
                 netID = int.Parse(data[1]);
                 opName = data[2];
-                WebSend("name." + PlayerPrefs.GetString("username"), PlayerPrefs.GetString("username"));
+                WebSend("name." + PlayerPrefs.GetString("username"));
                 Debug.Log(opName);
                 StartGame(false);
             } else {
@@ -261,6 +250,14 @@ public class Manager : MonoBehaviour {
         }
     }
 
+    /*
+    public (byte[], int) ReceiveData() {
+        byte[] data = new byte[1024];
+        int length = otherPlayer.Receive(data);
+        Debug.Log("Received data");
+        return (data, length);
+    }*/
+
     public void Login() {
         try {
             InputField[] fields = loginWindow.GetComponentsInChildren<InputField>();
@@ -270,11 +267,8 @@ public class Manager : MonoBehaviour {
             string[] data = WebLogin(fields[0].text, fields[1].text).Split('.');
             if (data[0] == "0") {
                 PlayerPrefs.SetString("username", fields[0].text);
-                PlayerPrefs.SetString("password", fields[1].text);
-                sessionID = int.Parse(data[1]);
                 mainMenu.transform.Find("Username").GetComponent<Text>().text = "Logged in as " + PlayerPrefs.GetString("username");
                 welcomeWindow.SetActive(false);
-                loginWindow.SetActive(false);
             } else {
                 throw new Exception(data[1]);
             }
@@ -284,22 +278,6 @@ public class Manager : MonoBehaviour {
         }
     }
 
-    //For logging in with saved credentials
-    //Yeah, I should not save the credentials, but I am in something of a hurry here
-    bool Login(string username, string password) {
-        string[] data = WebLogin(username, password).Split('.');
-        if (data[0] == "-1") { Application.Quit(); }
-        if (data[0] == "0") {
-            PlayerPrefs.SetString("username", username);
-            PlayerPrefs.SetString("password", password);
-            sessionID = int.Parse(data[1]);
-            mainMenu.transform.Find("Username").GetComponent<Text>().text = "Logged in as " + PlayerPrefs.GetString("username");
-            welcomeWindow.SetActive(false);
-            loginWindow.SetActive(false);
-            return true;
-        } else return false;
-    }
-
     public void Register() {
         try {
             InputField[] fields = registerWindow.GetComponentsInChildren<InputField>();
@@ -307,13 +285,10 @@ public class Manager : MonoBehaviour {
                 throw new Exception("Enter username and password");
             }
             string[] data = WebRegister(fields[0].text, fields[1].text).Split('.');
-            if (data[0] == "-1") { Application.Quit(); }
             if (data[0] == "0") {
                 PlayerPrefs.SetString("username", fields[0].text);
-                sessionID = int.Parse(data[1]);
                 mainMenu.transform.Find("Username").GetComponent<Text>().text = "Logged in as " + PlayerPrefs.GetString("username");
                 welcomeWindow.SetActive(false);
-                registerWindow.SetActive(false);
             } else {
                 throw new Exception(data[1]);
             }
@@ -331,27 +306,26 @@ public class Manager : MonoBehaviour {
     }
 
     public void Exit() {
-        Application.Quit();
+        Environment.Exit(0);
     }
 
     string WebMatchmake(string localPlayerName) {
         matchmake = true;
-        string output = new WebClient().DownloadString(url + "?sessionID=" + sessionID + "&intent=matchmake&user=" + localPlayerName);
-        return output;
+        return new WebClient().DownloadString(url + "?intent=matchmake&name=" + localPlayerName);
     }
 
-    string WebCancelMatchmaking(string localPlayerName) {
+    string WebCancelMatchmaking() {
         matchmake = false;
-        return new WebClient().DownloadString(url + "?sessionID=" + sessionID + "&intent=cancel&id=" + netID + "&user=" + localPlayerName);
+        return new WebClient().DownloadString(url + "?intent=cancel&id=" + netID);
     }
 
-    string WebSend(string data, string localPlayerName) {
+    string WebSend(string data) {
         Debug.Log("Sending " + data);
-        return new WebClient().DownloadString(url + "?sessionID=" + sessionID + "&intent=send&id=" + netID + "&data=" + data + "&user=" + localPlayerName);
+        return new WebClient().DownloadString(url + "?intent=send&id=" + netID + "&data=" + data);
     }
 
-    string WebReceive(string localPlayerName) {
-        return new WebClient().DownloadString(url + "?sessionID=" + sessionID + "&intent=receive&id=" + netID + "&user=" + localPlayerName);
+    string WebReceive() {
+        return new WebClient().DownloadString(url + "?intent=receive&id=" + netID);
     }
 
     string WebLogin(string username, string password) {
@@ -363,10 +337,6 @@ public class Manager : MonoBehaviour {
 
     string WebGetStats(string username) {
         return new WebClient().DownloadString(url + "?intent=getStats&username=" + username);
-    }
-
-    string WebWin() {
-        return new WebClient().DownloadString(url + "?sessionID=" + sessionID + "&intent=win&usere=" + PlayerPrefs.GetString("username") + "&loser=" + opName);
     }
 
     public void ToggleMenu(bool active) {
@@ -395,7 +365,7 @@ public class Manager : MonoBehaviour {
     public void CancelMatchmaking() {
 
         cancelMatchmaking = Task.Run(() => {
-            WebCancelMatchmaking(PlayerPrefs.GetString("username"));
+            WebCancelMatchmaking();
         });
         matchmake = false;
         ToggleMatchmakingWindow(false);
