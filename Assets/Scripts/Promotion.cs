@@ -37,6 +37,7 @@ public class Promotion : MonoBehaviour {
     }
 
     public void Confirm() {
+        manager.board.GetComponent<AudioSource>().PlayOneShot(manager.board.promoteSound);
         if (!manager.singlePlayerTest) {
             //Pass turn with info about promotion
             manager.PassTurnPromotion(originalPosition, piece.position, index+1);

@@ -29,6 +29,9 @@ public class Board : MonoBehaviour {
     public GameObject blackRook;
     public GameObject blackPawn;
 
+    public AudioClip moveSound;
+    public AudioClip promoteSound;
+
     public static GameObject[] piecePrefabs;
 
     List<GameObject> validMoveMarkers;
