@@ -59,7 +59,7 @@ public class Board : MonoBehaviour {
         GenerateChessboard();
         SpawnPieces();
 
-        //Index(new int[] { 3, 3, 3, 3 }).Die();
+        manager.UpdateTurnText(playerTurn);
     }
 
     private void Update() {
@@ -87,6 +87,7 @@ public class Board : MonoBehaviour {
                 Debug.Log("got here");
                 if (Stuff.WithinBounds(hover)) {
                     playerTurn = false;
+                    manager.UpdateTurnText(false);
                     if (piece.Move(hover) && !manager.singlePlayerTest) {
                         piece.GoHome();
                         if (piece.GetType() == typeof(Pawn) && piece.position[1] == piece.FinalRank && piece.position[3] == piece.FinalRank) {

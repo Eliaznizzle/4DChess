@@ -397,6 +397,8 @@ MonoBehaviour:
     type: 3}
   blackPawn: {fileID: 3384679201357712607, guid: c31b94205f3cb2a47bf45535e95ea380,
     type: 3}
+  moveSound: {fileID: 8300000, guid: 07e46c0058535ec439851ffbacf2af3a, type: 3}
+  promoteSound: {fileID: 8300000, guid: cf5edb3ba2cc6904d8e09e0ef340f73e, type: 3}
   tile: {fileID: 4180785226959642737, guid: e5dce35ea44aeac4ba17c4b385453f69, type: 3}
   darkTileColor: {r: 0.5660378, g: 0.24296905, b: 0.24296905, a: 1}
   moveIndicator: {fileID: 1400379674324098646, guid: e9179931589a2074cbd54153f4e4a486,

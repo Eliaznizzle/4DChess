@@ -21,10 +21,12 @@ public class Manager : MonoBehaviour {
     public GameObject popupMenu;
     public GameObject settingsMenu;
     public GameObject matchmakingWindow;
+    public GameObject gameEndMenu;
+
+    public Button concedeButton;
 
     public InputField nameInput;
 
-    public GameObject gameEndMenuPrefab;
     public Text result;
 
     public GameObject promotionMenuPrefab;
@@ -88,6 +90,9 @@ public class Manager : MonoBehaviour {
     private void Update() {
         if (Input.GetButtonDown("Cancel")) {
             WebCancelMatchmaking();
+            if (board != null) {
+                Concede();
+            }
             Application.Quit();
         }
 
@@ -101,7 +106,6 @@ public class Manager : MonoBehaviour {
         mainMenu.SetActive(false);
         ToggleMatchmakingWindow(false);
         board = Instantiate(boardPrefab).GetComponent<Board>();
-        gameUI.transform.Find("Playing against").GetComponent<Text>().text = "Playing against " + opName;
         gameUI.SetActive(true);
         if (!singlePlayerTest) {
             //Debug.Log("Connected to " + ((IPEndPoint)otherPlayer.RemoteEndPoint).Address);
@@ -137,9 +141,7 @@ public class Manager : MonoBehaviour {
                         }
                     }
 
-                    /*byte[] data = new byte[4];
-                    otherPlayer.Receive(data);
-                    board.localPlayerBlack = Convert.ToBoolean(data[0]);*/
+                    
                 }
             }
 
@@ -175,10 +177,7 @@ public class Manager : MonoBehaviour {
     }
 
     public void EndGame(bool win) {
-        GameObject gameEndMenu = Instantiate(gameEndMenuPrefab);
-        result = gameEndMenu.GetComponentInChildren<Text>();
-        Button mainMenuButton = gameEndMenu.GetComponentInChildren<Button>();
-        mainMenuButton.onClick.AddListener(MainMenu);
+        gameEndMenu.SetActive(true);
         if (win) {
             result.text = "You won!";
         } else {
@@ -196,6 +195,7 @@ public class Manager : MonoBehaviour {
             int[] move = Array.ConvertAll(data[2].ToCharArray(), c => (int)Char.GetNumericValue(c));
             board.Index(piecePos).Move(move);
             board.playerTurn = true;
+            UpdateTurnText(true);
             board.Index(move).GoHome();
         } else if (data[0] == "promote") {
             int[] piecePos = Array.ConvertAll(data[1].ToCharArray(), c => (int)Char.GetNumericValue(c));
@@ -207,13 +207,14 @@ public class Manager : MonoBehaviour {
             Print("Moved");
             board.SpawnPiece(move[0], move[1], move[2], move[3], int.Parse(data[3]), piece.black);
             board.playerTurn = true;
+            UpdateTurnText(true);
             Print("Got here too");
             board.Index(move).GoHome();
             Print("How about here?");
         } else if (data[0] == "name") {
             if (data[0] != "") {
                 matchmake = false;
-                opName = data[0];
+                opName = data[1];
                 StartGame(true);
             }
         } else if (data[0] == "matchmake") {
@@ -239,8 +240,10 @@ public class Manager : MonoBehaviour {
             } else {
                 throw new Exception("Matchmaking data (" + string.Join(".", data) + ")had an invalid length");
             }
+        } else if (data[0] == "concede") {
+            EndGame(true);
         } else {
-            Print("wtf? data length is " + data.Length);
+            Print("Invalid data header: " + data[0]);
         }
     }
 
@@ -280,6 +283,9 @@ public class Manager : MonoBehaviour {
     }
 
     public void ToggleMenu(bool active) {
+        if (active) {
+            concedeButton.interactable = (board != null);
+        }
         popupMenu.SetActive(active);
     }
 
@@ -298,6 +304,19 @@ public class Manager : MonoBehaviour {
         });
         matchmake = false;
         ToggleMatchmakingWindow(false);
+    }
+
+    public void Concede() {
+        WebSend("concede");
+        EndGame(false);
+    }
+
+    public void UpdateTurnText(bool playerTurn) {
+        if (playerTurn) {
+            gameUI.transform.Find("Playing against").GetComponent<Text>().text = "Your turn against " + opName;
+        } else {
+            gameUI.transform.Find("Playing against").GetComponent<Text>().text = opName + "'s turn against you";
+        }
     }
 
     public void Print(string text) {

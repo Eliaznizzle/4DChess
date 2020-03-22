@@ -21,7 +21,9 @@ public class Pawn : ChessPiece
                 if (!hasMoved && Stuff.WithinBounds(move) && board.Index(move) == null) {
                     move = CalcMove(new int[4]);
                     move[d] += 2 * up;
-                    moves.Add(move);
+                    if (board.Index(move) == null) {
+                        moves.Add(move);
+                    }
                 }
             }
         }
